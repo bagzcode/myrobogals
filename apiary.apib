@@ -1,0 +1,1775 @@
+FORMAT: 1A
+HOST: http://beta.my.robogals.org/api
+
+# myRobogals
+This is the documentation for the upcoming myRobogals API, version 1.0.
+
+Suggestions are welcome.
+
+
+All <u>underlined</u> parameters are required.
+
+## Roles
+
+****NOT YET IMPLEMENTED****
+
+Users now have multiple "roles" that they can authorise actions as.
+
+All requests, except when requested anonymously, must be accompanied by a `role` parameter with the ID string of the role the user wishes to take.
+
+To determine what roles are available to the user, use `/1.0/self/roles`.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>role</u><br>string</td>
+        <td>ID string of role.</td>
+    </tr>
+</table>
+
+
+## Pagination
+To reduce loads on the server, the API limits queries to [xxxxxxx] items per page.
+
+The `pagination` parameter is required in the request body, where indicated, for list and search API endpoints.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters (Request)</th>
+    </th>
+    <tr>
+        <td><u>pagination</u></td>
+        <td>
+        <table>
+            <tr>
+                <td><u>length</u><br>integer</td>
+                <td>Maximum length of each result page.<br>This value is capped at [xxxxxxx].<br>Negative indices are not supported.</td>
+            </tr>
+            <tr>
+                <td><u>page</u><br>integer</td>
+                <td>0-indexed number of the requested result page.<br>Negative indices are not supported.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
+## Meta
+
+A `meta` parameter is included in the response body to indicate information about the query.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters (Response)</th>
+    </th>
+    <tr>
+        <td><u>meta</u></td>
+        <td>
+        <table>
+            <tr>
+                <td><u>size</u><br>integer</td>
+                <td>Total number of items in the result.<br>This is intended to allow clients to know of the size of the result and determine if fetching of pages is required.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
+## Error Messages
+At present, there is a mix of long form and short form error messages. Information about short form ones are contained here, and are usually found in the `fail` parameter in the response body.
+
+<table>
+    <tr>
+        <th>Error</th>
+        <th>Message</th>
+    </th>
+    <tr>
+        <td>DATA_FORMAT_INVALID</td>
+        <td>Some or all of the data supplied was in a format or of a type that is invalid and could not be processed.</td>
+    </tr>
+    <tr>
+        <td>DATA_INSUFFICIENT</td>
+        <td>Insufficient parameters or information was supplied, not fulfilling required fields or parameters.</td>
+    </tr>
+    <tr>
+        <td>DATA_INVALID</td>
+        <td>Some or all of the data supplied was not valid for the parameter.</td>
+    </tr>
+    <tr>
+        <td>DATA_VALIDATION_FAILED</td>
+        <td>Some or all of the data supplied did not pass validation and could not be processed.<br>
+        Possible reasons include:
+        <ul>
+            <li>Insufficient data (missing required fields)</li>
+            <li>Invalid data (e.g. email without `@`)</li>
+            <li>Non-unique data in a field with uniqueness enforced (e.g. repeated usernames)</li>
+        </ul>
+        </td>
+    </tr>
+    <tr>
+        <td>FIELD_IDENTIFIER_INVALID</td>
+        <td>One or more field identifiers were supplied that either does not exist or was not recognisable.</td>
+    </tr>
+    <tr>
+        <td>FIELD_READ_ONLY</td>
+        <td>One or more field identifiers were requested that are read-only, preventing use in a write operation.</td>
+    </tr>
+    <tr>
+        <td>OBJECT_ALREADY_EXISTS</td>
+        <td>The object could not be created because it already exists.</td>
+    </tr>
+    <tr>
+        <td>OBJECT_NOT_FOUND</td>
+        <td>The object could not be found.</td>
+    </tr>
+    <tr>
+        <td>OBJECT_NOT_MODIFIED</td>
+        <td>The object was not modified (deleted or edited) as it either did not exist or the database could not perform the action.</td>
+    </tr>
+    <tr>
+        <td>OBJECT_SELF_NOT_DELETABLE</td>
+        <td>The object could not be deleted because it refers to the requester.</td>
+    </tr>
+    <tr>
+        <td>PAGINATION_NEGATIVE_INDEX_UNSUPPORTED</td>
+        <td>Negative pagination indices are unsupported. Use a non-negative integer.</td>
+    </tr>
+</table>
+
+
+# Group Authentication
+****NOT COMPLETE****
+
+OAuth2 is used for authentication, and clients must be registered with the system prior to use.
+
+To register, please contact [xxxxxxxx]@robogals.org.
+
+## POST /1.0/o/token
+
+An API endpoint to request an OAuth2 token.
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+
+    + Body
+
+            {
+                
+            }
+
++ Response 200 (application/json)
+
+            {
+                
+            }
+
+# Group Users
+
+## POST /1.0/users/list
+
+An API endpoint to list users, with various search queries and sorting.
+
+Authentication is optional.
+
+Returned results will vary according to visibility settings of the requesting user. This is for privacy reasons.
+If a user has elected to hide certain fields from view, these will appear as `null` objects. If an entire profile is hidden, it will not be returned in the query response (and is also reflected in the `meta` parameter).
+
+`id` will always be returned outside of `data`. Therefore, `visibility` will not have an effect on `id` in the response body.
+
+When requesting fields which do not exist, an error is raised.
+
+When requesting fields which are not permitted for the requesting user to view, such as passwords or internal information, an error is raised.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>pagination</u></td>
+        <td>See Pagination information.</td>
+    </tr>
+    <tr>
+        <td><u>query[]</u></td>
+        <td>List of objects describing fields for listing and querying.<br>Order of objects is important.
+        <table>
+            <tr>
+                <td><u>field</u><br>string</td>
+                <td>Name of the field being listed or used for a query or sort order.</td>
+            </tr>
+            <tr>
+                <td>order<br>string</td>
+                <td>Sorts field by one of the following:
+                <table>
+                    <tr>
+                        <td>"a"</td>
+                        <td>ascending</td>
+                    </tr>
+                    <tr>
+                        <td>"d"</td>
+                        <td>descending</td>
+                    </tr>
+                </table>
+                </td>
+            </tr>
+            <tr>
+                <td>search<br>string</td>
+                <td>String for case-insensitive, non-exact search in the associated field.</td>
+            </tr>
+            <tr>
+                <td>visibility<br>boolean</td>
+                <td>Sets visibility of field in response body. Does not affect <code>id</code>.<br>Default = true</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Optional-Access-Token>
+
+    + Body
+
+            {
+                "pagination":   {
+                    "length": 10,
+                    "page": 0
+                },
+                "query":    [
+                    {
+                        "field": "id",
+                        "visibility": false
+                    },
+                    {
+                        "field": "username",
+                        "order": "d"
+                    },
+                    {
+                        "field": "primary_email",
+                        "search": "@gmail.com"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "meta": {
+                    "size": 3
+                },
+                "user": [
+                    {
+                        "data": {
+                            "primary_email": null,
+                            "username": "JohnDoe"
+                        },
+                        "id": "668df6a119fea8f4d324f439c2d31"
+                    },
+                    {
+                        "data": {
+                            "primary_email": "jane.doe@gmail.com",
+                            "username": "JaneDoe"
+                        },
+                        "id": "227a47a1b435f671f8af358469775"
+                    },
+                    {
+                        "data": {
+                            "primary_email": "space.traveller@gmail.com",
+                            "username": "ArthurDent"
+                        },
+                        "id": "c75edd63cfd8e4724fe5673741b88"
+                    }
+                ]
+            }
+            
+## POST /1.0/users/create
+
+An API endpoint to create users.
+
+Authentication is optional.
+
+Response body will return the list of `id` of users that were successfully created in a key-value pair with nonces provided.
+
+
+****UNDER REVIEW****
+
+If a user attempts to sign up with the primary email address of an existing user (whether deleted or not), the API will return the ID of the existing user and a password reset email will be sent.
+
+Users created via. anonymous sign ups will appear as "inactive" or "deleted" users until the password [re]set process is completed. Those signed up via. 
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>user[]</u></td>
+        <td>List of objects describing users and edited information.
+        <table>
+            <tr>
+                <td><u>nonce</u><br>string</td>
+                <td>Nonce string to identify the user being created. No requirements imposed, except they must be unique within the set of objects in the request.<br>Returned in response body with ID of user.</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "user":   [
+                    {
+                        "data": {
+                            "given_name": "Arthur",
+                            "password": "ILikeTravelling",
+                            "primary_email": "arthur.dent@robogals.org",
+                            "username": "arthur42"
+                        },
+                        "nonce": "a"
+                    },
+                    {
+                        "data": {
+                            "family_name": "Takahashi",
+                            "given_name": "Yamato",
+                            "password": "yoroshiku4649",
+                            "preferred_name": "高橋大和",
+                            "primary_email": "yamato.takahashi@robogals.jp",
+                            "username": "taka1"
+                        },
+                        "nonce": "f6khZugx"
+                    },
+                    {
+                        "data": {
+                            "dob": "2008-07-14",
+                            "given_name": "John",
+                            "password": "I'm a deer",
+                            "primary_email": "john.doe@robogals.org",
+                            "secondary_email": "afemaledeer@someprovider.com",
+                            "username": "JohnDoe"
+                        },
+                        "nonce": "1"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "nonce": {}
+                },
+                "success": {
+                    "nonce_id": {
+                        "a": "45f3b5df5e59f2d36192cc4e3a688",
+                        "f6khZugx": "4f7ebbb4231dde9fc34a8bda7f242",
+                        "1": "58737b566f2cefd4a7faf794fea39"
+                    }
+                }
+            }
+
+            
+## POST /1.0/users/edit
+
+An API endpoint to edit users.
+
+Authentication is required.
+
+Edits for each user are atomic; they will either successfully process all of the requested changes **for that user** or none at all.
+
+Response body will return the list of `id` of users that were successfully edited.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>user[]</u></td>
+        <td>List of objects describing users and edited information.
+        <table>
+            <tr>
+                <td><u>id</u><br>integer</td>
+                <td>ID of user.</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "user":   [
+                    {
+                        "data": {
+                            "primary_email": "arthur.dent@robogals.org"
+                        },
+                        "id": "c75edd63cfd8e4724fe5673741b88"
+                    },
+                    {
+                        "data": {
+                            "preferred_name": "John Doe",
+                            "username": "JohnDoe"
+                        },
+                        "id": "668df6a119fea8f4d324f439c2d31"
+                    },
+                    {
+                        "data": {
+                            "password": "ThisIsSomeNewPassword"
+                        },
+                        "id": "227a47a1b435f671f8af358469775"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id": ["c75edd63cfd8e4724fe5673741b88", "668df6a119fea8f4d324f439c2d31", "227a47a1b435f671f8af358469775"]
+                }
+            }
+            
+            
+## POST /1.0/users/delete 
+
+An API endpoint to delete users.
+
+Authentication is required.
+    
+"Deletion" only occurs for users which are currently active.
+Verification of deleted users can be performed by checking the returned `id` list.
+    
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>id[]</u><br>integer</td>
+        <td>List of <code>id</code> of users to delete.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "id":   ["c75edd63cfd8e4724fe5673741b88", "668df6a119fea8f4d324f439c2d31", "227a47a1b435f671f8af358469775"]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id":   ["c75edd63cfd8e4724fe5673741b88", "668df6a119fea8f4d324f439c2d31", "227a47a1b435f671f8af358469775"]
+                }
+            }
+            
+## POST /1.0/users/pwdreset 
+
+**** ACTUAL RESET CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to reset user passwords.
+
+Authentication is not required.
+
+Resetting passwords on inactive accounts is allowed, and will reactivate their account upon reset.
+
+For privacy and security reasons, no error will appear if an email address is not found in the database. All emails processed will be returned in the `success` parameter.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>primary_email[]</u><br>string</td>
+        <td>List of <code>primary_email</code> of users who wish to reset their passwords.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "primary_email":   ["john.doe@robogals.org","arthur.dent@robogals.org"]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "primary_email": {}
+                },
+                "success": {
+                    "primary_email":   ["john.doe@robogals.org","arthur.dent@robogals.org"]
+                }
+            }
+            
+            
+            
+            
+
+# Group Groups
+
+## POST /1.0/groups/list
+
+An API endpoint to list groups, with various search queries and sorting.
+
+Authentication is optional.
+
+Returned results will vary according to visibility settings of the requesting user. This is for privacy reasons.
+
+`id` will always be returned outside of `data`. Therefore, `visibility` will not have an effect on `id` in the response body.
+
+When requesting fields which do not exist, an error is raised.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>pagination</u></td>
+        <td>See Pagination information.</td>
+    </tr>
+    <tr>
+        <td><u>group</u></td>
+        <td>List of objects describing type group to query.
+        <table>
+            <tr>
+                <td><u>type</u><br>string</td>
+                <td>"general", "chapters", "schools", "companies"</td>
+            </tr>
+        </table>
+        </td>
+    <tr>
+        <td><u>query[]</u></td>
+        <td>List of objects describing fields for listing and querying.<br>Order of objects is important.
+        <table>
+            <tr>
+                <td><u>field</u><br>string</td>
+                <td>Name of the field being listed or used for a query or sort order.</td>
+            </tr>
+            <tr>
+                <td>order<br>string</td>
+                <td>Sorts field by one of the following:
+                <table>
+                    <tr>
+                        <td>"a"</td>
+                        <td>ascending</td>
+                    </tr>
+                    <tr>
+                        <td>"d"</td>
+                        <td>descending</td>
+                    </tr>
+                </table>
+                </td>
+            </tr>
+            <tr>
+                <td>search<br>string</td>
+                <td>String for case-insensitive, non-exact search in the associated field.</td>
+            </tr>
+            <tr>
+                <td>visibility<br>boolean</td>
+                <td>Sets visibility of field in response body. Does not affect <code>id</code>.<br>Default = true</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Optional-Access-Token>
+
+    + Body
+
+            {
+                "pagination":   {
+                    "length": 10,
+                    "page": 0
+                },
+                "query":    [
+                    {
+                        "field": "id",
+                        "order": "d",
+                        "visibility": false
+                    },
+                    {
+                        "field": "name"
+                    },
+                    {
+                        "field": "preferred_name"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "meta": {
+                    "size": 3
+                },
+                "group": [
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "id": 111
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "id": 83
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "id": 42
+                    }
+                ]
+            }
+            
+## POST /1.0/groups/create
+
+An API endpoint to create groups.
+
+Authentication is required.
+
+Response body will return the list of `id` of groups that were successfully created in a key-value pair with nonces provided.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>group[]</u></td>
+        <td>List of objects describing groups and edited information.
+        <table>
+            <tr>
+                <td><u>nonce</u><br>string</td>
+                <td>Nonce string to identify the group being created. No requirements imposed, except they must be unique within the set of objects in the request.<br>Returned in response body with ID of group.</td>
+            </tr>
+            <tr>
+                <td><u>type</u><br>string</td>
+                <td>"general", "chapters", "schools", "companies"</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "group":   [
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "nonce": "a"
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "nonce": "f6khZugx"
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "nonce": "1"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "nonce": {}
+                },
+                "success": {
+                    "nonce_id": {
+                        "a": 582,
+                        "f6khZugx": 583,
+                        "1": 584
+                    }
+                }
+            }
+
+            
+## POST /1.0/groups/edit
+
+An API endpoint to edit groups.
+
+Authentication is required.
+
+Edits for each group are atomic; they will either successfully process all of the requested changes **for that group** or none at all.
+
+Response body will return the list of `id` of groups that were successfully edited.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>group[]</u></td>
+        <td>List of objects describing groups and edited information.
+        <table>
+            <tr>
+                <td><u>id</u><br>integer</td>
+                <td>ID of user.</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "group":   [
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "id": 42
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "id": 83
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "preferred_name": ""
+                        },
+                        "id": 111
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id": [42, 83, 111]
+                }
+            }
+            
+            
+## POST /1.0/groups/delete 
+
+An API endpoint to delete groups.
+
+Authentication is required.
+    
+"Deletion" only occurs for group which are currently active.
+Verification of deleted users can be performed by checking the returned `id` list.
+    
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>id[]</u><br>integer</td>
+        <td>List of <code>id</code> of users to delete.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "id":   [42, 83, 111]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id":   [42, 83, 111]
+                }
+            }
+
+# Group Messages
+
+## POST /1.0/messages/send
+
+An API endpoint to send messages.
+
+Authentication is required.
+
+Even though message is a list, only one message can be sent at a time.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Optional-Access-Token>
+
+    + Body
+
+            {
+                "message":  [
+                    {
+                        "data": {
+                            "email": {
+                                "from_name": "",
+                                "subject": "",
+                                "body": "",
+                                "html": True,
+                                "recipients": [
+                                    {
+                                        "user": "id"
+                                    },
+                                    {
+                                        "to_address": ""
+                                    }
+                                ]
+                            }
+                        },
+                        "nonce": "f6khZugx"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "nonce": {}
+                },
+                "success": {
+                    "nonce_id": [
+                        "f6khZugx": 182586587
+                    ]
+                }
+            }
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+# Group Utils    
+
+## GET /1.0/utils/time
+
+An API endpoint to fetch the server time in UTC.
+
+Authentication is not required.
+
+Note that this is obtained via. GET.
+
++ Response 200 (application/json)
+
+            {
+                "time": {
+                    "iso8601": "2014-07-13T05:11:30.028984+00:00",
+                    "unix_ts": 1405228290
+                }
+            }
+
+## POST /1.0/utils/pwdreset/initiate
+
+**** ACTUAL RESET CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to reset user passwords.
+
+Authentication is not required.
+
+Resetting passwords on inactive accounts is allowed, and will reactivate their account upon reset.
+
+For privacy and security reasons, no error will appear if an email address is not found in the database. All emails processed will be returned in the `success` parameter.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>primary_email[]</u><br>string</td>
+        <td>List of <code>primary_email</code> of users who wish to reset their passwords.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+
+    + Body
+
+            {
+                "primary_email":   ["john.doe@robogals.org","arthur.dent@robogals.org"]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "primary_email": {}
+                },
+                "success": {
+                    "primary_email":   ["john.doe@robogals.org","arthur.dent@robogals.org"]
+                }
+            }
+            
+
+## POST /1.0/utils/pwdreset/complete
+
+**** ACTUAL RESET CODE NOT YET IMPLEMENTED ****
+
+Only processes one user at a time.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>primary_email</u><br>string</td>
+        <td><code>primary_email</code> of user who wishes to reset their password.</td>
+    </tr>
+    <tr>
+        <td><u>token</u><br>string</td>
+        <td>Password reset token.</td>
+    </tr>
+    <tr>
+        <td><u>password</u><br>string</td>
+        <td>New password.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+
+    + Body
+
+            {
+                "primary_email":   "john.doe@robogals.org",
+                "token":   "",
+                "password":   "",
+            }
+
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                },
+                "success": {
+                }
+            }
+            
+# Group Activities
+
+## POST /1.0/activities/list
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to list activities, with various search queries and sorting. 
+
+Activities can be anything from conferences to workshops. The list will show all the activities including past, current and future actifities. 
+
+Authentication is optional.  
+
+Returned results will vary according to visibility settings of the requesting user. This is for privacy reasons.
+
+`id` will always be returned outside of `data`. Therefore, `visibility` will not have an effect on `id` in the response body.
+
+When requesting fields which do not exist, an error is raised.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>pagination</u></td>
+        <td>See Pagination information.</td>
+    </tr>
+    <tr>
+        <td><u>activity</u></td>
+        <td>List of objects describing type activity to query.
+        <table>
+            <tr>
+                <td><u>type</u><br>string</td>
+                <td>"standard", "workshop", "training event", "conference"</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+    <tr>
+        <td><u>query[]</u></td>
+        <td>List of objects describing fields for listing and querying.<br>Order of objects is important.
+        <table>
+            <tr>
+                <td><u>field</u><br>string</td>
+                <td>Name of the field being listed or used for a query or sort order.</td>
+            </tr>
+            <tr>
+                <td>order<br>string</td>
+                <td>Sorts field by one of the following:
+                <table>
+                    <tr>
+                        <td>"a"</td>
+                        <td>ascending</td>
+                    </tr>
+                    <tr>
+                        <td>"d"</td>
+                        <td>descending</td>
+                    </tr>
+                </table>
+                </td>
+            </tr>
+            <tr>
+                <td>search<br>string</td>
+                <td>String for case-insensitive, non-exact search in the associated field.</td>
+            </tr>
+            <tr>
+                <td>visibility<br>boolean</td>
+                <td>Sets visibility of field in response body. Does not affect <code>id</code>.<br>Default = true</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Optional-Access-Token>
+
+    + Body
+
+            {
+                "pagination":   {
+                    "length": 10,
+                    "page": 0
+                },
+                "type":  {
+                    "general"
+                },
+                "query":    [
+                    {
+                        "field": "id",
+                        "order": "d",
+                        "visibility": false
+                    },
+                    {
+                        "field": "name"
+                    },
+                    {
+                        "field": "location"
+                    },
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "meta": {
+                    "size": 3
+                    "type": ""
+                },
+                "activitity": [
+                    {
+                        "data": {
+                            "name": "",
+                            "location": ""
+                        },
+                        "id": 111
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "location": ""
+                        },
+                        "id": 83
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "location": ""
+                        },
+                        "id": 42
+                    }
+                ]
+            }
+            
+## POST /1.0/activities/create
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to create activities.
+
+Authentication is required. The authenticated user is automatically set as the creator of the activities.
+
+Response body will return the list of `id` of activities that were successfully created in a key-value pair with nonces provided.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </tr>
+    <tr>
+        <td><u>activity[]</u></td>
+        <td>List of objects describing groups and edited information.
+        <table>
+            <tr>
+                <td><u>nonce</u><br>string</td>
+                <td>Nonce string to identify the activities being created. No requirements imposed, except they must be unique within the set of objects in the request.<br>Returned in response body with ID of group.</td>
+            </tr>
+            <tr>
+                <td><u>type</u><br>string</td>
+                <td>"standard", "workshop", "training event", "conference"</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "type": ""
+                "activities":   [
+                    {
+                        "data": {
+                            "name": "",
+                            "invitation_open": ""
+                            "invitation_close": ""
+                            "date_activity_start": ""
+                            "date_activity_end": ""
+                        },
+                        "nonce": "zzz"
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "invitation_open": ""
+                            "invitation_close": ""
+                            "date_activity_start": ""
+                            "date_activity_end": ""
+                        },
+                        "nonce": "dskys38a"
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "invitation_open": ""
+                            "invitation_close": ""
+                            "date_activity_start": ""
+                            "date_activity_end": ""
+                        },
+                        "nonce": "456"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "nonce": {}
+                },
+                "success": {
+                    "nonce_id": {
+                        "zzz": 9,
+                        "dskys38a": 10,
+                        "456": 11
+                    }
+                }
+            }
+
+            
+## POST /1.0/activities/edit
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to edit activities.
+
+Authentication is required.
+
+Edits for each activities are atomic; they will either successfully process all of the requested changes **for that activitiy** or none at all.
+
+Response body will return the list of `id` of groups that were successfully edited.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </tr>
+    <tr>
+        <td><u>activity[]</u></td>
+        <td>List of objects describing activities and edited information.
+        <table>
+            <tr>
+                <td><u>id</u><br>integer</td>
+                <td>ID of activity.</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "type": ""
+                "activities":   [
+                    {
+                        "id": 125
+                        "data": {
+                            "name": "",
+                            "location": ""
+                        },
+                    },
+                    {
+                        "id": 63
+                        "data": {
+                            "description": "",
+                            "status": 
+                        },
+                    },
+                    {
+                        "id": 80
+                        "data": {
+                            "invitation_close": "",
+                            "activity_start": ""
+                        },
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id": [125, 63, 80]
+                }
+            }
+            
+            
+## POST /1.0/activities/delete 
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to delete activities.
+
+Authentication is required.
+    
+"Deletion" only occurs for activities which are currently active.
+Verification of deleted users can be performed by checking the returned `id` list.
+    
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>id[]</u><br>integer</td>
+        <td>List of <code>id</code> of activities to delete.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "id":   [61, 17, 224]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id":   [61, 17, 224]
+                }
+            }
+            
+# Group Participants
+
+## POST /1.0/participants/list
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to list participants of the activities, with various search queries and sorting. 
+
+Authentication is optional. 
+
+Returned results will vary according to visibility settings of the requesting user. This is for privacy reasons.
+
+`id` will always be returned outside of `data`. Therefore, `visibility` will not have an effect on `id` in the response body.
+
+When requesting fields which do not exist, an error is raised.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>pagination</u></td>
+        <td>See Pagination information.</td>
+    </tr>
+    <tr>
+        <td><u>query[]</u></td>
+        <td>List of objects describing fields for listing and querying.<br>Order of objects is important.
+        <table>
+            <tr>
+                <td><u>field</u><br>string</td>
+                <td>Name of the field being listed or used for a query or sort order.</td>
+            </tr>
+            <tr>
+                <td>order<br>string</td>
+                <td>Sorts field by one of the following:
+                <table>
+                    <tr>
+                        <td>"a"</td>
+                        <td>ascending</td>
+                    </tr>
+                    <tr>
+                        <td>"d"</td>
+                        <td>descending</td>
+                    </tr>
+                </table>
+                </td>
+            </tr>
+            <tr>
+                <td>search<br>string</td>
+                <td>String for case-insensitive, non-exact search in the associated field.</td>
+            </tr>
+            <tr>
+                <td>visibility<br>boolean</td>
+                <td>Sets visibility of field in response body. Does not affect <code>id</code>.<br>Default = true</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "pagination":   {
+                    "length": 10,
+                    "page": 0
+                },
+                "query":    [
+                    {
+                        "field": "id",
+                        "order": "d",
+                        "visibility": false
+                    },
+                    {
+                        "field": "name"
+                    },
+                    {
+                        "field": "activity_id"
+                    },
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "meta": {
+                    "size": 2
+                },
+                "participants": [
+                    {
+                        "data": {
+                            "name": "",
+                            "activity_id": ""
+                        },
+                        "id": 2
+                    },
+                    {
+                        "data": {
+                            "name": "",
+                            "activity_id": ""
+                        },
+                        "id": 1
+                    }
+                ]
+            }
+            
+## POST /1.0/participants/create
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to create participants.
+
+Authentication is required.
+
+Response body will return the list of `id` of activities that were successfully created in a key-value pair with nonces provided.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>participant[]</u></td>
+        <td>List of objects describing participants and edited information.
+        <table>
+            <tr>
+                <td><u>nonce</u><br>string</td>
+                <td>Nonce string to identify the participants being created. No requirements imposed, except they must be unique within the set of objects in the request.<br>Returned in response body with ID of participant.</td>
+            </tr>
+            <tr>
+                <td><u>activity_id</u><br>integer</td>
+                <td>ID of participant</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "type": ""
+                "activity_id":   [
+                    {
+                        "data": {
+                            "user_id": ""
+                        },
+                        "nonce": "123"
+                    },
+                    {
+                        "data": {
+                            "user_id": ""
+                        },
+                        "nonce": "jhasgd87"
+                    },
+                    {
+                        "data": {
+                            "user_id": ""
+                        },
+                        "nonce": "qwe"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "nonce": {}
+                },
+                "success": {
+                    "nonce_id": {
+                        "123": 3,
+                        "jhasgd87": 4,
+                        "qwe": 5
+                    }
+                }
+            }
+
+            
+## POST /1.0/participants/edit
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to edit participants in active activities.
+
+Authentication is required.
+
+Edits for each participants are atomic; they will either successfully process all of the requested changes **for that participant** or none at all.
+
+Edits for participants in not active (or past) activities will raise an error.
+
+Response body will return the list of `id` of participants that were successfully edited.
+
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>participant[]</u></td>
+        <td>List of objects describing participants and edited information.
+        <table>
+            <tr>
+                <td><u>id</u><br>integer</td>
+                <td>ID of participant.</td>
+            </tr>
+            <tr>
+                <td><u>data</u></td>
+                <td>Collection of key-value pairs of fields to be updated.</td>
+            </tr>
+        </table>
+        </td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "type": ""
+                "participants":   [
+                    {
+                        "id": 1
+                        "data": {
+                            "user_id": ""
+                        },
+                    },
+                    {
+                        "id": 3
+                        "data": {
+                            "user_id": ""
+                        },
+                    },
+                    {
+                        "id": 8
+                        "data": {
+                            "user_id": ""
+                        },
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id": [1, 3, 8]
+                }
+            }
+            
+            
+## POST /1.0/participants/delete 
+
+**** CODE NOT YET IMPLEMENTED ****
+
+An API endpoint to delete participants.
+
+Authentication is required.
+    
+"Deletion" only occurs for participants which are currently has active activities.
+Verification of deleted users can be performed by checking the returned `id` list.
+    
+<table>
+    <tr>
+        <th colspan="2">Parameters</th>
+    </th>
+    <tr>
+        <td><u>id[]</u><br>integer</td>
+        <td>List of <code>id</code> of participants to delete in active activities.</td>
+    </tr>
+</table>
+
++ Request (application/json)
+    + Headers
+            
+            Accept: application/json
+            Authorization: Bearer <Access-Token>
+
+    + Body
+
+            {
+                "id":   [1, 3, 5]
+            }
+
++ Response 200 (application/json)
+
+            {
+                "fail": {
+                    "id": {}
+                },
+                "success": {
+                    "id":   [1, 3, 5]
+                }
+            }
